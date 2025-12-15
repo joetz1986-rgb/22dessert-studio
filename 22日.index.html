@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22dessert studio 下午茶訂購</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Lucide Icons (提供可愛的圖示) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 使用 Inter 字體作為基礎，並確保中文字體顯示良好 */
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            line-height: 1.6;
+        }
+        /* 定義奶茶色系 */
+        .color-cream { background-color: #F5EBE0; } /* 輕柔奶油底色 */
+        .color-card { background-color: #EDE7E1; } /* 卡片底色 */
+        .color-accent { color: #A88764; } /* 奶茶深棕色文字 */
+        .bg-accent { background-color: #A88764; } /* 奶茶深棕色背景 */
+        .border-accent { border-color: #A88764; }
+        
+        /* 自定義滾動條樣式，讓整體更美觀 */
+        .scrollable-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-content::-webkit-scrollbar-thumb {
+            background-color: #D6CCC2; 
+            border-radius: 4px;
+        }
+        .scrollable-content::-webkit-scrollbar-track {
+            background: #F5EBE0; 
+        }
+
+        /* 隱藏未選中的內容區域 */
+        .tab-content {
+            display: none;
+        }
+        /* 標籤頁過渡效果 */
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+    <script>
+        // 設定 Tailwind CSS 配置，用於自定義顏色和圓角
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'milk-tea-light': '#F5EBE0',
+                        'milk-tea-medium': '#D6CCC2',
+                        'milk-tea-dark': '#A88764',
+                    },
+                }
+            }
+        }
+
+        /**
+         * 處理分頁切換的邏輯
+         * @param {string} tabId - 要顯示的分頁 ID
+         */
+        function switchTab(tabId) {
+            // 隱藏所有分頁內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // 移除所有按鈕的選中樣式
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('bg-milk-tea-dark', 'text-white', 'shadow-md');
+                button.classList.add('bg-milk-tea-medium', 'text-milk-tea-dark', 'hover:bg-milk-tea-dark/80', 'hover:text-white');
+            });
+
+            // 顯示當前分頁內容
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) {
+                activeContent.style.display = 'block';
+            }
+
+            // 添加當前按鈕的選中樣式
+            const activeNavButton = document.getElementById(`nav-${tabId}`);
+            if (activeNavButton) {
+                activeNavButton.classList.remove('bg-milk-tea-medium', 'text-milk-tea-dark', 'hover:bg-milk-tea-dark/80', 'hover:text-white');
+                activeNavButton.classList.add('bg-milk-tea-dark', 'text-white', 'shadow-md');
+            }
+            
+            // 將當前選中的 tabId 寫入 URL hash，以便重新整理後仍保持在該頁面
+            window.location.hash = tabId;
+        }
+
+        /**
+         * 頁面載入完成後的初始化設定
+         */
+        window.onload = function() {
+            // 初始化 Lucide Icons
+            lucide.createIcons();
+
+            // 檢查 URL hash，決定預設顯示哪個分頁
+            const hash = window.location.hash.substring(1);
+            const defaultTab = ['price', 'ordering', 'faq', 'contact'].includes(hash) ? hash : 'price';
+            
+            switchTab(defaultTab);
+        };
+        
+        /**
+         * 處理複製 LINE ID 的邏輯
+         */
+        function copyLineId() {
+            const lineId = '22dessert_cat';
+            const tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = lineId;
+            tempInput.select();
+            
+            try {
+                // 使用 document.execCommand('copy') 進行複製
+                document.execCommand('copy');
+                showMessageBox('✅ LINE ID 已複製！', '現在就去 LINE 搜尋我們吧！');
+            } catch (err) {
+                showMessageBox('❌ 複製失敗', '請手動複製 ID: ' + lineId, true);
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        /**
+         * 顯示自定義訊息框
+         * @param {string} title - 訊息標題
+         * @param {string} message - 訊息內容
+         * @param {boolean} isError - 是否為錯誤訊息
+         */
+        function showMessageBox(title, message, isError = false) {
+            const modal = document.getElementById('message-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            // 根據是否為錯誤，調整顏色
+            modalTitle.className = isError 
+                ? 'text-lg font-bold text-red-600' 
+                : 'text-lg font-bold color-accent';
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+
+            // 自動在 3 秒後關閉 (除非是錯誤訊息)
+            if (!isError) {
+                setTimeout(() => {
+                    closeMessageBox();
+                }, 3000);
+            }
+        }
+
+        /**
+         * 關閉自定義訊息框
+         */
+        function closeMessageBox() {
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+    </script>
+</head>
+<body class="color-cream min-h-screen p-4 flex items-center justify-center">
+
+    <!-- 訂購卡片主體 -->
+    <div class="w-full max-w-4xl color-card rounded-3xl shadow-xl overflow-hidden p-0 md:p-6">
+        
+        <!-- 標題區 (頂部) -->
+        <header class="p-6 md:p-0 text-center">
+            <h1 class="text-4xl font-extrabold color-accent flex items-center justify-center space-x-3 mb-2">
+                <!-- 可愛小黑貓 Emoji -->
+                <span role="img" aria-label="Black Cat" class="text-5xl">🐈‍⬛</span>
+                <span>22dessert studio</span>
+            </h1>
+            <p class="text-milk-tea-dark text-xl font-medium tracking-wider">
+                您的專屬下午茶訂購小卡
+            </p>
+        </header>
+
+        <!-- 導航分頁按鈕區 -->
+        <nav class="mt-6 mb-4 md:mb-6 px-0 md:px-0">
+            <div class="flex flex-wrap justify-center gap-2 md:gap-4 p-2 bg-milk-tea-light rounded-2xl shadow-inner">
+                
+                <button id="nav-price" onclick="switchTab('price')" class="tab-button flex-1 md:flex-none px-4 py-2 rounded-xl text-sm md:text-base font-semibold whitespace-nowrap">
+                    <i data-lucide="cake" class="inline-block w-4 h-4 mr-2"></i> 價目表
+                </button>
+                
+                <button id="nav-ordering" onclick="switchTab('ordering')" class="tab-button flex-1 md:flex-none px-4 py-2 rounded-xl text-sm md:text-base font-semibold whitespace-nowrap">
+                    <i data-lucide="clipboard-list" class="inline-block w-4 h-4 mr-2"></i> 訂購說明
+                </button>
+                
+                <button id="nav-faq" onclick="switchTab('faq')" class="tab-button flex-1 md:flex-none px-4 py-2 rounded-xl text-sm md:text-base font-semibold whitespace-nowrap">
+                    <i data-lucide="help-circle" class="inline-block w-4 h-4 mr-2"></i> 常見問題
+                </button>
+                
+                <button id="nav-contact" onclick="switchTab('contact')" class="tab-button flex-1 md:flex-none px-4 py-2 rounded-xl text-sm md:text-base font-semibold whitespace-nowrap">
+                    <i data-lucide="message-square-text" class="inline-block w-4 h-4 mr-2"></i> LINE 聯繫
+                </button>
+            </div>
+        </nav>
+
+        <!-- 內容顯示區 -->
+        <div class="p-4 md:p-6 bg-white rounded-2xl shadow-lg border border-milk-tea-medium/50 scrollable-content max-h-[60vh] overflow-y-auto">
+
+            <!-- 1. 價目表 -->
+            <div id="price" class="tab-content">
+                <h2 class="text-3xl font-bold color-accent mb-4 border-b pb-2 border-milk-tea-medium flex items-center">
+                    <i data-lucide="cake-slice" class="w-6 h-6 mr-3"></i> 甜蜜價目表
+                </h2>
+                <div class="space-y-6">
+                    <!-- 招牌甜點 -->
+                    <div class="p-4 color-card rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-milk-tea-dark mb-2">🍰 招牌手工蛋糕 (片/顆)</h3>
+                        <ul class="list-disc list-inside space-y-2 ml-4 text-stone-700">
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>經典奶茶戚風蛋糕 (4吋/6吋)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">420 / 780 元</span>
+                            </li>
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>黑醋栗生乳酪蛋糕 (單片)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">160 元</span>
+                            </li>
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>黑貓午茶限定小泡芙 (3入一組)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">180 元</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- 飲品/點心 -->
+                    <div class="p-4 color-card rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold text-milk-tea-dark mb-2">☕ 特選飲品與常溫點心</h3>
+                        <ul class="list-disc list-inside space-y-2 ml-4 text-stone-700">
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>手工焦糖布丁 (含玻璃瓶)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">90 元</span>
+                            </li>
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>頂級伯爵奶茶包 (5入)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">250 元</span>
+                            </li>
+                            <li class="flex justify-between items-center border-b border-milk-tea-medium/50 pb-1">
+                                <span>小黑貓手作餅乾 (10片裝)</span> 
+                                <span class="font-bold text-lg text-milk-tea-dark">200 元</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 訂購說明 -->
+            <div id="ordering" class="tab-content">
+                <h2 class="text-3xl font-bold color-accent mb-4 border-b pb-2 border-milk-tea-medium flex items-center">
+                    <i data-lucide="book-open-text" class="w-6 h-6 mr-3"></i> 幸福訂購說明
+                </h2>
+                <div class="space-y-4 text-stone-700">
+                    <h3 class="text-xl font-semibold text-milk-tea-dark">1. 預訂時程</h3>
+                    <p class="p-3 bg-milk-tea-light rounded-lg border-l-4 border-milk-tea-dark">
+                        所有甜點皆為手工製作，為確保品質，請至少於**取貨日 3 天前**完成訂購與匯款。若有急單需求，請透過 LINE 聯繫，我們會盡力協助您。
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-milk-tea-dark">2. 付款方式</h3>
+                    <p class="p-3 bg-milk-tea-light rounded-lg border-l-4 border-milk-tea-dark">
+                        目前採**全額事先匯款**，確認訂單後，我們將提供銀行帳號資訊。請於 24 小時內完成匯款，逾期訂單將會自動取消。
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-milk-tea-dark">3. 取貨方式</h3>
+                    <ul class="list-disc list-inside ml-5 space-y-2">
+                        <li>**自取：** 請於預訂時間至工作室（地點僅透過 LINE 提供）領取，逾時請提前告知。</li>
+                        <li>**宅配：** 可選擇冷凍宅配，運費依黑貓宅急便公告收費，風險由買家承擔（我們會盡力加強包裝）。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 3. 常見問題 -->
+            <div id="faq" class="tab-content">
+                <h2 class="text-3xl font-bold color-accent mb-4 border-b pb-2 border-milk-tea-medium flex items-center">
+                    <i data-lucide="message-circle-question" class="w-6 h-6 mr-3"></i> 常見問題 Q&A
+                </h2>
+                <div class="space-y-4">
+                    <!-- Q1 -->
+                    <details class="group rounded-xl border border-milk-tea-medium p-4 transition-all duration-300 open:shadow-xl color-card">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-milk-tea-dark">
+                            甜點可以指定時段送達嗎？
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <p class="mt-3 text-stone-700 pt-2 border-t border-milk-tea-light">
+                            宅配服務無法保證指定時段，但我們會註明時段需求。自取則需事先約定，請準時抵達，以免影響後續訂單喔。
+                        </p>
+                    </details>
+                    
+                    <!-- Q2 -->
+                    <details class="group rounded-xl border border-milk-tea-medium p-4 transition-all duration-300 open:shadow-xl color-card">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-milk-tea-dark">
+                            蛋糕保存期限有多久？
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <p class="mt-3 text-stone-700 pt-2 border-t border-milk-tea-light">
+                            生乳酪及戚風蛋糕建議**冷藏 3 天內**食用完畢，確保最佳風味。常溫餅乾請密封保存於陰涼處，約可保存 7 天。
+                        </p>
+                    </details>
+
+                    <!-- Q3 -->
+                    <details class="group rounded-xl border border-milk-tea-medium p-4 transition-all duration-300 open:shadow-xl color-card">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-milk-tea-dark">
+                            可以客製化蛋糕尺寸或口味嗎？
+                            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <p class="mt-3 text-stone-700 pt-2 border-t border-milk-tea-light">
+                            針對 6 吋以上蛋糕，我們提供部分客製化服務（例如：減糖、水果更換），請透過 LINE 與我們詳細討論您的需求與預算。
+                        </p>
+                    </details>
+                </div>
+            </div>
+
+            <!-- 4. LINE 聯繫 -->
+            <div id="contact" class="tab-content text-center">
+                <h2 class="text-3xl font-bold color-accent mb-6 border-b pb-2 border-milk-tea-medium flex items-center justify-center">
+                    <i data-lucide="scan-line" class="w-6 h-6 mr-3"></i> LINE 快速聯繫
+                </h2>
+                <div class="space-y-6 max-w-sm mx-auto p-6 color-card rounded-2xl shadow-lg">
+                    <p class="text-stone-700 text-lg">
+                        想下單、詢問客製或確認細節嗎？
+                        <br>
+                        請加入我們的 LINE 官方帳號，由可愛的店長為您服務！
+                    </p>
+                    
+                    <div class="border-2 border-dashed border-milk-tea-dark p-4 rounded-xl">
+                        <p class="text-xl font-bold text-milk-tea-dark mb-2">
+                            我們的 LINE ID 是：
+                        </p>
+                        <code class="text-2xl font-mono bg-milk-tea-light text-milk-tea-dark p-2 rounded-lg inline-block select-all">
+                            22dessert_cat
+                        </code>
+                    </div>
+
+                    <button onclick="copyLineId()" class="w-full py-3 px-6 rounded-full text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-transform transform hover:scale-[1.02] bg-milk-tea-dark border-b-4 border-milk-tea-dark/80 active:border-b-0 active:mt-1">
+                        <i data-lucide="copy" class="inline-block w-5 h-5 mr-2"></i> 複製 LINE ID
+                    </button>
+                    
+                    <p class="text-sm text-stone-500 mt-4">
+                        <i data-lucide="info" class="inline-block w-4 h-4 mr-1"></i> 請主動發送訊息，我們將盡快回覆您！
+                    </p>
+                </div>
+            </div>
+
+        </div> <!-- 內容顯示區結束 -->
+    </div> <!-- 訂購卡片主體結束 -->
+
+    <!-- 自定義訊息 Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-11/12 transform transition-all scale-100 color-card">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-lg font-bold color-accent">訊息</h3>
+                <button onclick="closeMessageBox()" class="text-stone-500 hover:text-stone-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p id="modal-message" class="text-stone-700 mb-4">內容</p>
+            <button onclick="closeMessageBox()" class="bg-milk-tea-dark text-white font-semibold py-2 px-4 rounded-xl w-full hover:bg-milk-tea-dark/90">
+                確認
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>
